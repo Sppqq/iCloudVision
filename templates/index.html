@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Поиск по фотографиям</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/"><i class="fas fa-images me-2"></i>Поиск по фотографиям</a>
+            <button class="btn btn-outline-light" onclick="updateIndex()">
+                <i class="fas fa-sync-alt me-2"></i>Обновить индекс
+            </button>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <form id="searchForm" onsubmit="search(event)" class="mb-4">
+                            <div class="input-group">
+                                <input type="text" id="query" class="form-control form-control-lg" 
+                                       placeholder="Введите поисковый запрос..." required>
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="fas fa-search me-2"></i>Найти
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="sync-buttons">
+                <button id="syncButton" class="sync-button">Синхронизировать с iCloud Photos</button>
+                <button id="stopSyncButton" class="sync-button stop-sync" style="display: none;">Остановить синхронизацию</button>
+            </div>
+            <div class="notifications">
+                <div id="syncStatus" class="sync-status"></div>
+                <div id="errorNotification" class="notification error" style="display: none;"></div>
+                <div id="successNotification" class="notification success" style="display: none;"></div>
+            </div>
+        </div>
+
+        <div id="sync-status" class="progress-container" style="display: none;">
+            <div class="progress-bar-wrapper">
+                <div class="progress-bar" role="progressbar" style="width: 0%">0%</div>
+            </div>
+            <div class="progress-details">
+                <span class="progress-text">Загружено 0 из 0 фотографий</span>
+                <span class="new-photos-text">Новых: 0</span>
+            </div>
+            <div class="error-list" style="display: none;">
+                <h4>Не удалось скачать следующие файлы:</h4>
+                <ul></ul>
+            </div>
+        </div>
+
+        <div id="results" class="row mt-4 results-grid">
+            <!-- Здесь будут результаты поиска -->
+        </div>
+
+        <div id="loading" class="text-center mt-4 d-none">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Загрузка...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для предпросмотра -->
+    <div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Предпросмотр изображения</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center p-0">
+                    <img id="previewImage" src="" alt="Предпросмотр" class="img-fluid">
+                </div>
+                <div class="modal-footer">
+                    <div class="text-start flex-grow-1" id="imageInfo"></div>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для входа в iCloud -->
+    <div class="modal fade" id="iCloudLoginModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Вход в iCloud</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="iCloudLoginForm">
+                        <div class="mb-3">
+                            <label for="icloud-email" class="form-label">Apple ID (email)</label>
+                            <input type="email" class="form-control" id="icloud-email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="icloud-password" class="form-label">Пароль</label>
+                            <input type="password" class="form-control" id="icloud-password" required>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="remember-credentials">
+                            <label class="form-check-label" for="remember-credentials">
+                                Запомнить учетные данные
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" onclick="submitICloudLogin()">Войти</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html> 

@@ -1,0 +1,5 @@
+DeepImageSearch==1.4
+Pillow>=9.0.0
+numpy>=1.19.5
+tensorflow>=2.4.0
+tqdm>=4.59.0 
