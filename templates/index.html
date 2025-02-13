@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,39 +8,42 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
 </head>
-<body class="bg-light">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<body>
+    <nav class="navbar navbar-expand-lg">
         <div class="container">
             <a class="navbar-brand" href="/"><i class="fas fa-images me-2"></i>Поиск по фотографиям</a>
-            <button class="btn btn-outline-light" onclick="updateIndex()">
-                <i class="fas fa-sync-alt me-2"></i>Обновить индекс
-            </button>
+            <div class="d-flex align-items-center">
+                <button class="btn theme-toggle me-3" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="btn btn-primary" onclick="updateIndex()">
+                    <i class="fas fa-sync-alt me-2"></i>Обновить индекс
+                </button>
+            </div>
         </div>
     </nav>
 
     <div class="container mt-4">
         <div class="row justify-content-center">
             <div class="col-md-8">
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <form id="searchForm" onsubmit="search(event)" class="mb-4">
-                            <div class="input-group">
-                                <input type="text" id="query" class="form-control form-control-lg" 
-                                       placeholder="Введите поисковый запрос..." required>
-                                <button class="btn btn-primary" type="submit">
-                                    <i class="fas fa-search me-2"></i>Найти
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                <div class="search-card">
+                    <form id="searchForm" onsubmit="search(event)" class="mb-4">
+                        <div class="input-group">
+                            <input type="text" id="query" class="form-control form-control-lg" 
+                                   placeholder="Введите поисковый запрос..." required>
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fas fa-search me-2"></i>Найти
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
 
         <div class="controls">
             <div class="sync-buttons">
-                <button id="syncButton" class="sync-button">Синхронизировать с iCloud Photos</button>
-                <button id="stopSyncButton" class="sync-button stop-sync" style="display: none;">Остановить синхронизацию</button>
+                <button id="syncButton" class="btn btn-primary">Синхронизировать с iCloud Photos</button>
+                <button id="stopSyncButton" class="btn btn-danger" style="display: none;">Остановить синхронизацию</button>
             </div>
             <div class="notifications">
                 <div id="syncStatus" class="sync-status">
@@ -68,14 +71,13 @@
             </div>
         </div>
 
-        <div id="results" class="row mt-4 results-grid">
+        <div id="results" class="results-grid">
             <!-- Здесь будут результаты поиска -->
         </div>
 
-        <div id="loading" class="text-center mt-4 d-none">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Загрузка...</span>
-            </div>
+        <div id="loading" class="loading-spinner d-none">
+            <div class="spinner"></div>
+            <span>Загрузка...</span>
         </div>
     </div>
 
