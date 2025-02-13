@@ -7,7 +7,6 @@
 ## Features
 - Automatic photo synchronization with iCloud
 - Semantic image search using text descriptions
-- Automatic translation of search queries to English
 - HEIC format support with automatic conversion
 - Web interface with real-time progress tracking
 - Multi-threaded processing for fast synchronization
@@ -17,14 +16,13 @@
 - Flask for web interface
 - CLIP model for semantic search
 - PyiCloud for iCloud API integration
-- Google Translate API (via deep-translator) for query translation
 - Pillow and pillow-heif for image processing
 - Threading for asynchronous operations
 
 ## Requirements
 - Python 3.7+
 - Microsoft Visual C++ Build Tools (for Windows)
-- Internet connection (for iCloud sync and query translation)
+- Internet connection (for iCloud sync)
 - Sufficient disk space for photo storage
 
 ## Installation
@@ -69,20 +67,13 @@ python app.py
 4. After synchronization, use search to find the photos you need
 
 ### Image Search
-- Enter queries in any language - they will be automatically translated to English
-- For best results, use specific descriptions
+- For best results, use specific descriptions in English
 - Search supports both simple queries ("cat", "beach") and complex descriptions ("black cat on white sofa")
 
 ## Security
 - iCloud two-factor authentication support
 - Secure credentials storage
 - Local image index storage
-- No API keys required for translation
-
-## Notes
-- Internet connection is required for translation feature
-- Search quality depends on query translation accuracy
-- You can enter queries directly in English if you experience translation issues
 
 ## Troubleshooting
 
