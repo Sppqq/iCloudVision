@@ -57,6 +57,20 @@ async function search(event) {
     event.preventDefault();
     const query = document.getElementById('query').value;
     
+    // Проверяем наличие индекса перед поиском
+    try {
+        const indexCheck = await fetch('/check_index');
+        const indexData = await indexCheck.json();
+        
+        if (!indexData.exists) {
+            showNotification('info', 'Изображения ещё не проиндексированы. Начинаем индексацию...');
+            updateIndex();
+            return;
+        }
+    } catch (error) {
+        console.error('Ошибка при проверке индекса:', error);
+    }
+    
     // Сбрасываем состояние при новом поиске
     currentQuery = query;
     currentPage = 1;
@@ -77,11 +91,18 @@ async function search(event) {
         });
         
         const data = await response.json();
+        
+        if (data.error === 'no_index') {
+            showNotification('info', 'Изображения ещё не проиндексированы. Начинаем индексацию...');
+            updateIndex();
+            return;
+        }
+        
         hasMore = data.has_more;
         displayResults(data.results, true);
     } catch (error) {
         console.error('Ошибка:', error);
-        alert('Произошла ошибка при поиске');
+        showNotification('error', 'Произошла ошибка при поиске');
     } finally {
         hideLoading();
     }
@@ -168,6 +189,10 @@ async function updateIndex() {
     const indexingStatus = document.getElementById('indexing-status');
     const progressBar = indexingStatus.querySelector('.progress-bar');
     const progressText = indexingStatus.querySelector('.progress-text');
+    const infoPanel = document.getElementById('infoPanel');
+    
+    // Скрываем информационную панель
+    infoPanel.style.display = 'none';
     
     // Показываем статус
     indexingStatus.style.display = 'block';
@@ -189,7 +214,6 @@ async function updateIndex() {
             progressText.textContent = 'Ошибка при обновлении индекса: ' + (result.error || 'Неизвестная ошибка');
             progressBar.style.width = '0%';
             
-            // Скрываем сообщение об ошибке через 5 секунд
             setTimeout(() => {
                 indexingStatus.style.display = 'none';
             }, 5000);
@@ -198,7 +222,6 @@ async function updateIndex() {
         progressText.textContent = 'Ошибка при обновлении индекса: ' + error.message;
         progressBar.style.width = '0%';
         
-        // Скрываем сообщение об ошибке через 5 секунд
         setTimeout(() => {
             indexingStatus.style.display = 'none';
         }, 5000);
@@ -227,6 +250,9 @@ async function checkIndexingStatus() {
             progressBar.textContent = '100%';
             progressText.textContent = 'Индексация завершена!';
             
+            // Обновляем статистику
+            updateStatistics();
+            
             // Скрываем через 3 секунды
             setTimeout(() => {
                 indexingStatus.style.display = 'none';
@@ -234,7 +260,6 @@ async function checkIndexingStatus() {
         } else if (data.status === 'error') {
             progressText.textContent = 'Ошибка: ' + data.message;
             
-            // Скрываем через 5 секунд
             setTimeout(() => {
                 indexingStatus.style.display = 'none';
             }, 5000);
@@ -242,7 +267,6 @@ async function checkIndexingStatus() {
     } catch (error) {
         progressText.textContent = 'Ошибка при получении статуса: ' + error.message;
         
-        // Скрываем через 5 секунд
         setTimeout(() => {
             indexingStatus.style.display = 'none';
         }, 5000);
@@ -535,4 +559,48 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Добавляем обработчик для кнопки переключения темы
     document.getElementById('themeToggle').addEventListener('click', toggleTheme);
-}); 
+    
+    // Проверяем наличие индекса
+    checkIndex();
+    
+    // Загружаем статистику
+    updateStatistics();
+    
+    // Обновляем статистику каждые 30 секунд
+    setInterval(updateStatistics, 30000);
+});
+
+// Добавляем функцию для обновления статистики
+async function updateStatistics() {
+    try {
+        const response = await fetch('/stats');
+        const data = await response.json();
+        
+        document.getElementById('totalImages').textContent = data.total_images || '0';
+        document.getElementById('lastUpdate').textContent = data.last_update || 'Никогда';
+        document.getElementById('syncStatus').textContent = data.sync_status || 'Не синхронизировано';
+    } catch (error) {
+        console.error('Ошибка при получении статистики:', error);
+    }
+}
+
+// Функция для проверки наличия индекса
+async function checkIndex() {
+    try {
+        const response = await fetch('/check_index');
+        const data = await response.json();
+        
+        if (!data.exists) {
+            const infoPanel = document.getElementById('infoPanel');
+            const infoPanelText = document.getElementById('infoPanelText');
+            
+            infoPanelText.textContent = 'Изображения ещё не проиндексированы. Необходимо создать индекс для поиска.';
+            infoPanel.style.display = 'block';
+            
+            // Автоматически начинаем индексацию
+            updateIndex();
+        }
+    } catch (error) {
+        console.error('Ошибка при проверке индекса:', error);
+    }
+} 

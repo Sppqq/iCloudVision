@@ -1,6 +1,7 @@
 :root[data-theme="light"] {
     --bg-color: #f8f9fa;
     --text-color: #212529;
+    --text-muted: #6c757d;
     --card-bg: #ffffff;
     --border-color: #dee2e6;
     --navbar-bg: #ffffff;
@@ -9,11 +10,15 @@
     --input-color: #212529;
     --modal-bg: #ffffff;
     --hover-bg: #f8f9fa;
+    --stats-card-bg: #ffffff;
+    --info-card-bg: #ffffff;
+    --info-panel-bg: #e9ecef;
 }
 
 :root[data-theme="dark"] {
     --bg-color: #1a1a1a;
     --text-color: #e9ecef;
+    --text-muted: #adb5bd;
     --card-bg: #2d2d2d;
     --border-color: #404040;
     --navbar-bg: #2d2d2d;
@@ -22,6 +27,9 @@
     --input-color: #e9ecef;
     --modal-bg: #2d2d2d;
     --hover-bg: #333333;
+    --stats-card-bg: #2d2d2d;
+    --info-card-bg: #2d2d2d;
+    --info-panel-bg: #333333;
 }
 
 body {
@@ -276,5 +284,146 @@ body {
 
     .search-card {
         padding: 1rem;
+    }
+}
+
+/* Новые стили для статистики */
+.stats-card {
+    background-color: var(--stats-card-bg);
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+}
+
+.stats-icon {
+    font-size: 2rem;
+    color: #0d6efd;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(13, 110, 253, 0.1);
+    border-radius: 50%;
+}
+
+.stats-info h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--text-color);
+}
+
+.stats-info p {
+    margin: 0;
+    color: var(--text-muted);
+}
+
+/* Информационная панель */
+.info-panel {
+    background-color: var(--info-panel-bg);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.info-content {
+    display: flex;
+    align-items: center;
+    color: var(--text-color);
+}
+
+.info-content i {
+    font-size: 1.2rem;
+    color: #0d6efd;
+}
+
+/* Карточки с информацией */
+.info-card {
+    background-color: var(--info-card-bg);
+    border-radius: 15px;
+    padding: 1.5rem;
+    height: 100%;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.info-card h4 {
+    color: var(--text-color);
+    margin-bottom: 1rem;
+}
+
+.info-card p {
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+}
+
+.feature-list, .example-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.feature-list li, .example-list li {
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.feature-list i {
+    color: #198754;
+}
+
+.example-list i {
+    color: #0d6efd;
+}
+
+/* Улучшения для тёмной темы */
+.modal-content {
+    background-color: var(--modal-bg);
+    color: var(--text-color);
+}
+
+.modal-header, .modal-footer {
+    border-color: var(--border-color);
+}
+
+.form-label {
+    color: var(--text-color);
+}
+
+.form-check-label {
+    color: var(--text-color);
+}
+
+.btn-close {
+    filter: invert(var(--text-color-invert));
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .stats-card {
+        margin-bottom: 1rem;
+    }
+
+    .info-card {
+        margin-bottom: 1rem;
+    }
+
+    .stats-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+    }
+
+    .stats-info h3 {
+        font-size: 1.2rem;
     }
 } 
