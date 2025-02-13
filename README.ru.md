@@ -1,8 +1,19 @@
-# iCloudVision
+# 🔍 iCloudVision
 
-🔍 Умный поиск по вашим фотографиям в iCloud
+<div align="center">
 
-[English version](README.md)
+[![Python](https://img.shields.io/badge/Python-3.7%2B-blue?style=for-the-badge&logo=python)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
+[![iCloud](https://img.shields.io/badge/iCloud-3693F3?style=for-the-badge&logo=icloud&logoColor=white)](https://www.icloud.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+
+**Умный поиск по вашим фотографиям iCloud с использованием искусственного интеллекта**
+
+[🇬🇧 English](README.md) | [🇷🇺 Русский](README.ru.md)
+
+<img src="https://raw.githubusercontent.com/Sppqq/iCloudVision/main/static/preview.gif" alt="iCloudVision Demo" width="600"/>
+
+</div>
 
 ## Возможности
 - Автоматическая синхронизация фотографий с iCloud

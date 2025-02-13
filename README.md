@@ -1,88 +1,118 @@
-# iCloudVision
+# 🔍 iCloudVision
 
-🔍 Smart search through your iCloud photos
+<div align="center">
 
-[Русская версия](README.ru.md)
+[![Python](https://img.shields.io/badge/Python-3.7%2B-blue?style=for-the-badge&logo=python)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
+[![iCloud](https://img.shields.io/badge/iCloud-3693F3?style=for-the-badge&logo=icloud&logoColor=white)](https://www.icloud.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
-## Features
-- Automatic photo synchronization with iCloud
-- Semantic image search using text descriptions
-- HEIC format support with automatic conversion
-- Web interface with real-time progress tracking
-- Multi-threaded processing for fast synchronization
-- Image index caching for search optimization
+**Smart AI-Powered Search Through Your iCloud Photos**
 
-## Technologies
-- Flask for web interface
-- CLIP model for semantic search
-- PyiCloud for iCloud API integration
-- Pillow and pillow-heif for image processing
-- Threading for asynchronous operations
+[🇷🇺 Russian version](README.ru.md) | [🇬🇧 English version](README.md)
 
-## Requirements
-- Python 3.7+
-- Microsoft Visual C++ Build Tools (for Windows)
-- Internet connection (for iCloud sync)
-- Sufficient disk space for photo storage
+<img src="https://raw.githubusercontent.com/Sppqq/iCloudVision/main/static/preview.gif" alt="iCloudVision Demo" width="600"/>
 
-## Installation
+</div>
 
-### 1. System Preparation
+## ✨ Features
 
-#### Windows
-1. Install [Microsoft Visual C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
-   - During installation, select "C++ build tools"
-   - A system restart might be required after installation
+🔄 **iCloud Sync**
+- Automatic photo synchronization with your iCloud
+- Two-factor authentication support
+- Real-time progress tracking
 
-#### Linux/macOS
-- Install required build tools:
-  ```bash
-  # Ubuntu/Debian
-  sudo apt-get install build-essential python3-dev
-  
-  # macOS
-  xcode-select --install
-  ```
+🔍 **Smart Search**
+- Search photos using natural language descriptions
+- Powered by state-of-the-art AI models for image understanding
+- Instant results through index caching
 
-### 2. Project Installation
-1. Clone the repository:
+📸 **Image Processing**
+- HEIC/HEIF format support with automatic conversion
+- Optimized handling of large collections
+- Multi-threaded processing for maximum performance
+
+## 🚀 Quick Start
+
+### 1️⃣ Installation
+
 ```bash
+# Clone the repository
 git clone https://github.com/Sppqq/iCloudVision.git
 cd iCloudVision
-```
 
-2. Install dependencies:
-```bash
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-## Usage
-1. Start the web server:
+### 2️⃣ Launch
+
 ```bash
 python app.py
 ```
 
-2. Open your browser and go to `http://localhost:5000`
-3. Log in to your iCloud account
-4. After synchronization, use search to find the photos you need
+Open your browser and navigate to `http://localhost:5000`
 
-### Image Search
-- For best results, use specific descriptions in English
-- Search supports both simple queries ("cat", "beach") and complex descriptions ("black cat on white sofa")
+## 💡 How to Use
 
-## Security
-- iCloud two-factor authentication support
-- Secure credentials storage
-- Local image index storage
+1. **Authorization**
+   - Log in to your iCloud account
+   - Confirm two-factor authentication (if enabled)
 
-## Troubleshooting
+2. **Synchronization**
+   - Wait for initial synchronization to complete
+   - Monitor progress in real-time
 
-### Windows
-- If you encounter errors with `annoy` or other libraries during installation, make sure Microsoft Visual C++ Build Tools is properly installed
-- Try restarting your command prompt after installing Build Tools
+3. **Search**
+   - Enter text description of the photo you're looking for
+   - Use natural language for descriptions
+   - Example queries:
+     - "Sunset at the beach"
+     - "Birthday party photos"
+     - "Selfie in mountains"
 
-### Linux/macOS
-- If you experience compilation issues, ensure all necessary development tools are installed
+## 🛠 Technologies
 
-## License
-MIT License 
+- **Backend**: Flask, PyiCloud
+- **AI**: CLIP (OpenAI)
+- **Image Processing**: Pillow, pillow-heif
+- **Frontend**: JavaScript, Server-Sent Events
+- **Concurrency**: Python Threading
+
+## 📋 System Requirements
+
+- Python 3.7 or higher
+- Microsoft Visual C++ Build Tools (for Windows)
+- Stable internet connection
+- Sufficient disk space for photo storage
+
+## 🔒 Security
+
+- ✅ Secure credentials storage
+- ✅ iCloud two-factor authentication support
+- ✅ Local image index storage
+- ✅ Session encryption
+
+## 🤝 Contributing
+
+We welcome your contributions to the project!
+
+1. Fork the repository
+2. Create a branch for your changes
+3. Make changes and create a Pull Request
+
+## 📝 License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## 🙋‍♂️ Support
+
+If you have questions or issues:
+- Create an Issue in the repository
+- Email us at support@icvision.dev
+
+---
+
+<div align="center">
+Made with ❤️ for the community
+</div> 
