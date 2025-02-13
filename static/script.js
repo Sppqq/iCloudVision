@@ -293,7 +293,10 @@ function showICloudLogin() {
     }
 }
 
-function showNotification(type, message, duration = 5000) {
+function showNotification(type, messageKey, duration = 5000) {
+    const texts = translations[userSettings.getLanguage()];
+    const message = texts[messageKey] || messageKey;
+    
     const notificationId = type === 'error' ? 'errorNotification' : 'successNotification';
     const notification = document.getElementById(notificationId);
     
@@ -302,9 +305,7 @@ function showNotification(type, message, duration = 5000) {
         notification.style.display = 'block';
         
         setTimeout(() => {
-            if (notification) {
-                notification.style.display = 'none';
-            }
+            notification.style.display = 'none';
         }, duration);
     }
 }
@@ -549,21 +550,58 @@ function toggleTheme() {
     themeIcon.className = newTheme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
 }
 
-// Инициализация темы при загрузке страницы
+// Функция для обновления текстов на странице
+function updateTexts() {
+    const currentLang = userSettings.getLanguage();
+    const texts = translations[currentLang];
+    
+    // Обновляем все элементы с атрибутом data-translate
+    document.querySelectorAll('[data-translate]').forEach(element => {
+        const key = element.getAttribute('data-translate');
+        if (element.tagName === 'INPUT' && element.getAttribute('placeholder')) {
+            element.placeholder = texts[key];
+        } else {
+            element.textContent = texts[key];
+        }
+    });
+    
+    // Обновляем заголовок страницы
+    document.title = texts.title;
+    
+    // Обновляем текст кнопки языка
+    const langButton = document.getElementById('languageToggle');
+    langButton.innerHTML = `<i class="fas fa-globe me-1"></i>${currentLang.toUpperCase()}`;
+}
+
+// Функция для переключения языка
+function toggleLanguage() {
+    const currentLang = userSettings.getLanguage();
+    const newLang = currentLang === 'en' ? 'ru' : 'en';
+    userSettings.setLanguage(newLang);
+    document.documentElement.setAttribute('lang', newLang);
+    updateTexts();
+}
+
+// Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
-    const savedTheme = localStorage.getItem('theme') || 'light';
+    // Инициализация темы
+    const savedTheme = userSettings.getTheme();
     document.documentElement.setAttribute('data-theme', savedTheme);
     
     const themeIcon = document.querySelector('#themeToggle i');
     themeIcon.className = savedTheme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
     
-    // Добавляем обработчик для кнопки переключения темы
+    // Добавляем обработчики для кнопок
     document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+    document.getElementById('languageToggle').addEventListener('click', toggleLanguage);
     
-    // Проверяем наличие индекса
+    // Устанавливаем язык
+    const savedLang = userSettings.getLanguage();
+    document.documentElement.setAttribute('lang', savedLang);
+    updateTexts();
+    
+    // Проверяем индекс и загружаем статистику
     checkIndex();
-    
-    // Загружаем статистику
     updateStatistics();
     
     // Обновляем статистику каждые 30 секунд
@@ -575,12 +613,13 @@ async function updateStatistics() {
     try {
         const response = await fetch('/stats');
         const data = await response.json();
+        const texts = translations[userSettings.getLanguage()];
         
         document.getElementById('totalImages').textContent = data.total_images || '0';
-        document.getElementById('lastUpdate').textContent = data.last_update || 'Никогда';
-        document.getElementById('syncStatus').textContent = data.sync_status || 'Не синхронизировано';
+        document.getElementById('lastUpdate').textContent = data.last_update || texts.never;
+        document.getElementById('syncStatus').textContent = data.sync_status || texts.notSynced;
     } catch (error) {
-        console.error('Ошибка при получении статистики:', error);
+        console.error('Error updating statistics:', error);
     }
 }
 
@@ -593,14 +632,14 @@ async function checkIndex() {
         if (!data.exists) {
             const infoPanel = document.getElementById('infoPanel');
             const infoPanelText = document.getElementById('infoPanelText');
+            const texts = translations[userSettings.getLanguage()];
             
-            infoPanelText.textContent = 'Изображения ещё не проиндексированы. Необходимо создать индекс для поиска.';
+            infoPanelText.textContent = texts.noIndex;
             infoPanel.style.display = 'block';
             
-            // Автоматически начинаем индексацию
             updateIndex();
         }
     } catch (error) {
-        console.error('Ошибка при проверке индекса:', error);
+        console.error('Error checking index:', error);
     }
 } 

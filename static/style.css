@@ -1,3 +1,44 @@
+/* Добавляем новые стили в начало файла */
+.settings-group {
+    display: flex;
+    gap: 0.5rem;
+    margin-right: 1rem;
+}
+
+.actions-group {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-outline-secondary {
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+.btn-outline-secondary:hover {
+    background-color: var(--hover-bg);
+    color: var(--text-color);
+    border-color: var(--text-color);
+}
+
+#languageToggle {
+    min-width: 70px;
+}
+
+/* Анимация для переключения языка */
+@keyframes rotateGlobe {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+#languageToggle i {
+    transition: transform 0.3s ease;
+}
+
+#languageToggle:hover i {
+    animation: rotateGlobe 2s linear infinite;
+}
+
 :root[data-theme="light"] {
     --bg-color: #f8f9fa;
     --text-color: #212529;
