@@ -49,14 +49,28 @@ def detect_language(text):
     except:
         return 'en'  # По умолчанию считаем, что текст на английском
 
-def translate_to_english(text):
+def is_english(text):
     try:
         lang = detect_language(text)
-        if lang == 'en':
+        return lang == 'en'
+    except:
+        return True  # В случае ошибки считаем, что текст на английском
+
+def translate_to_english(text):
+    try:
+        # Проверяем, что текст не на английском
+        if is_english(text):
+            logger.info("Текст уже на английском, пропускаем перевод")
             return text
             
+        lang = detect_language(text)
+        logger.info(f"Определен язык текста: {lang}")
+        
         translator = GoogleTranslator(source=lang, target='en')
-        return translator.translate(text)
+        translated = translator.translate(text)
+        
+        logger.info(f"Перевод: {text} -> {translated}")
+        return translated
     except Exception as e:
         logger.error(f"Ошибка перевода: {str(e)}")
         return text  # В случае ошибки возвращаем оригинальный текст
