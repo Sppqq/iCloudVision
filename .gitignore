@@ -33,9 +33,22 @@ ENV/
 
 # Project specific
 Photos/
-image_index.pkl
-icloud_session.dat
+*.heic
+*.HEIC
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.mp4
+*.mov
+*.MOV
+*.index
+*.pkl
+*.db
+
+# Logs
 *.log
+logs/
 
 # OS specific
 .DS_Store

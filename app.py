@@ -5,6 +5,9 @@ from pathlib import Path
 from icloud_sync import ICloudSync
 import threading
 import logging
+from deep_translator import GoogleTranslator
+import re
+import langdetect
 
 # Настройка логирования
 logging.basicConfig(
@@ -39,6 +42,24 @@ indexing_progress = {
     "total": 0,
     "message": ""
 }
+
+def detect_language(text):
+    try:
+        return langdetect.detect(text)
+    except:
+        return 'en'  # По умолчанию считаем, что текст на английском
+
+def translate_to_english(text):
+    try:
+        lang = detect_language(text)
+        if lang == 'en':
+            return text
+            
+        translator = GoogleTranslator(source=lang, target='en')
+        return translator.translate(text)
+    except Exception as e:
+        logger.error(f"Ошибка перевода: {str(e)}")
+        return text  # В случае ошибки возвращаем оригинальный текст
 
 def progress_callback(progress, downloaded, total, new_photos):
     global sync_progress
@@ -146,8 +167,13 @@ def search():
     if not query:
         return jsonify({"results": [], "has_more": False})
     
+    # Переводим запрос на английский, если он на русском
+    translated_query = translate_to_english(query)
+    logger.info(f"Оригинальный запрос: {query}")
+    logger.info(f"Переведенный запрос: {translated_query}")
+    
     # Получаем все результаты
-    all_results = engine.search_images(query, top_k=200)  # Увеличиваем лимит
+    all_results = engine.search_images(translated_query, top_k=200)  # Увеличиваем лимит
     
     # Разбиваем на страницы
     start_idx = (page - 1) * per_page
@@ -156,7 +182,8 @@ def search():
     
     return jsonify({
         "results": page_results,
-        "has_more": end_idx < len(all_results)
+        "has_more": end_idx < len(all_results),
+        "translated_query": translated_query if translated_query != query else None
     })
 
 @app.route('/update_index', methods=['POST'])
