@@ -6,8 +6,16 @@ let isLoading = false;
 let hasMore = true;
 
 document.addEventListener('DOMContentLoaded', function() {
-    imagePreviewModal = new bootstrap.Modal(document.getElementById('imagePreviewModal'));
-    iCloudLoginModal = new bootstrap.Modal(document.getElementById('iCloudLoginModal'));
+    const imagePreviewModalElement = document.getElementById('imagePreviewModal');
+    const iCloudLoginModalElement = document.getElementById('iCloudLoginModal');
+    
+    if (imagePreviewModalElement) {
+        imagePreviewModal = new bootstrap.Modal(imagePreviewModalElement);
+    }
+    
+    if (iCloudLoginModalElement) {
+        iCloudLoginModal = new bootstrap.Modal(iCloudLoginModalElement);
+    }
     
     // Добавляем слушатель прокрутки
     window.addEventListener('scroll', function() {
@@ -157,12 +165,12 @@ function displayResults(results, clearExisting = true) {
 }
 
 async function updateIndex() {
-    const syncStatus = document.getElementById('sync-status');
-    const progressBar = syncStatus.querySelector('.progress-bar');
-    const progressText = syncStatus.querySelector('.progress-text');
+    const indexingStatus = document.getElementById('indexing-status');
+    const progressBar = indexingStatus.querySelector('.progress-bar');
+    const progressText = indexingStatus.querySelector('.progress-text');
     
     // Показываем статус
-    syncStatus.style.display = 'block';
+    indexingStatus.style.display = 'block';
     progressBar.style.width = '0%';
     progressBar.textContent = '0%';
     progressText.textContent = 'Обновление индекса...';
@@ -183,7 +191,7 @@ async function updateIndex() {
             
             // Скрываем сообщение об ошибке через 5 секунд
             setTimeout(() => {
-                syncStatus.style.display = 'none';
+                indexingStatus.style.display = 'none';
             }, 5000);
         }
     } catch (error) {
@@ -192,22 +200,22 @@ async function updateIndex() {
         
         // Скрываем сообщение об ошибке через 5 секунд
         setTimeout(() => {
-            syncStatus.style.display = 'none';
+            indexingStatus.style.display = 'none';
         }, 5000);
     }
 }
 
 async function checkIndexingStatus() {
-    const syncStatus = document.getElementById('sync-status');
-    const progressBar = syncStatus.querySelector('.progress-bar');
-    const progressText = syncStatus.querySelector('.progress-text');
+    const indexingStatus = document.getElementById('indexing-status');
+    const progressBar = indexingStatus.querySelector('.progress-bar');
+    const progressText = indexingStatus.querySelector('.progress-text');
     
     try {
         const response = await fetch('/indexing_status');
         const data = await response.json();
         
         if (data.status === 'running') {
-            const progress = (data.current / data.total) * 100;
+            const progress = data.total > 0 ? (data.current / data.total) * 100 : 0;
             progressBar.style.width = `${progress}%`;
             progressBar.textContent = `${Math.round(progress)}%`;
             progressText.textContent = data.message;
@@ -221,14 +229,14 @@ async function checkIndexingStatus() {
             
             // Скрываем через 3 секунды
             setTimeout(() => {
-                syncStatus.style.display = 'none';
+                indexingStatus.style.display = 'none';
             }, 3000);
         } else if (data.status === 'error') {
             progressText.textContent = 'Ошибка: ' + data.message;
             
             // Скрываем через 5 секунд
             setTimeout(() => {
-                syncStatus.style.display = 'none';
+                indexingStatus.style.display = 'none';
             }, 5000);
         }
     } catch (error) {
@@ -236,34 +244,45 @@ async function checkIndexingStatus() {
         
         // Скрываем через 5 секунд
         setTimeout(() => {
-            syncStatus.style.display = 'none';
+            indexingStatus.style.display = 'none';
         }, 5000);
     }
 }
 
 async function checkICloudAuth() {
-    const response = await fetch('/icloud/check_auth');
-    const data = await response.json();
-    
-    if (!data.authenticated) {
-        document.getElementById('syncButton').onclick = showICloudLogin;
-    } else {
-        document.getElementById('syncButton').onclick = syncWithICloud;
+    try {
+        const response = await fetch('/icloud/check_auth');
+        const data = await response.json();
+        
+        const syncButton = document.getElementById('syncButton');
+        if (syncButton && !data.authenticated) {
+            syncButton.onclick = showICloudLogin;
+        }
+    } catch (error) {
+        console.error('Ошибка при проверке авторизации:', error);
     }
 }
 
 function showICloudLogin() {
-    iCloudLoginModal.show();
+    if (iCloudLoginModal) {
+        iCloudLoginModal.show();
+    }
 }
 
 function showNotification(type, message, duration = 5000) {
-    const notification = document.getElementById(`${type}Notification`);
-    notification.textContent = message;
-    notification.style.display = 'block';
+    const notificationId = type === 'error' ? 'errorNotification' : 'successNotification';
+    const notification = document.getElementById(notificationId);
     
-    setTimeout(() => {
-        notification.style.display = 'none';
-    }, duration);
+    if (notification) {
+        notification.textContent = message;
+        notification.style.display = 'block';
+        
+        setTimeout(() => {
+            if (notification) {
+                notification.style.display = 'none';
+            }
+        }, duration);
+    }
 }
 
 async function stopSync() {
@@ -284,18 +303,25 @@ async function stopSync() {
 }
 
 async function submitICloudLogin() {
-    const email = document.getElementById('icloud-email').value;
-    const password = document.getElementById('icloud-password').value;
-    const remember = document.getElementById('remember-credentials').checked;
+    const emailInput = document.getElementById('icloud-email');
+    const passwordInput = document.getElementById('icloud-password');
+    const rememberCheckbox = document.getElementById('remember-credentials');
+    const syncButton = document.getElementById('syncButton');
+    
+    if (!emailInput || !passwordInput || !rememberCheckbox || !syncButton) {
+        showNotification('error', 'Ошибка: не найдены элементы формы');
+        return;
+    }
+
+    const email = emailInput.value;
+    const password = passwordInput.value;
+    const remember = rememberCheckbox.checked;
 
     if (!email || !password) {
         showNotification('error', 'Пожалуйста, введите email и пароль');
         return;
     }
 
-    const syncButton = document.getElementById('syncButton');
-    const stopSyncButton = document.getElementById('stopSyncButton');
-    
     try {
         console.log('Отправка запроса на подключение к iCloud...');
         syncButton.disabled = true;
@@ -344,11 +370,20 @@ async function submitICloudLogin() {
         }
 
         // Закрываем модальное окно
-        iCloudLoginModal.hide();
+        if (iCloudLoginModal) {
+            iCloudLoginModal.hide();
+        }
         
         // Привязываем функции к кнопкам
-        document.getElementById('syncButton').onclick = syncWithICloud;
-        document.getElementById('stopSyncButton').onclick = stopSync;
+        const syncButtonElement = document.getElementById('syncButton');
+        const stopSyncButtonElement = document.getElementById('stopSyncButton');
+        
+        if (syncButtonElement) {
+            syncButtonElement.onclick = syncWithICloud;
+        }
+        if (stopSyncButtonElement) {
+            stopSyncButtonElement.onclick = stopSync;
+        }
         
         console.log('Начинаем синхронизацию...');
         // Начинаем синхронизацию
@@ -358,15 +393,23 @@ async function submitICloudLogin() {
         console.error('Ошибка при подключении:', error);
         showNotification('error', `Ошибка: ${error.message}`);
     } finally {
-        syncButton.disabled = false;
+        if (syncButton) {
+            syncButton.disabled = false;
+        }
     }
 }
 
 function syncWithICloud() {
     const syncButton = document.getElementById('syncButton');
     const stopSyncButton = document.getElementById('stopSyncButton');
-    const syncStatus = document.getElementById('sync-status');
+    const syncStatus = document.getElementById('syncStatus');
     
+    if (!syncButton || !stopSyncButton || !syncStatus) {
+        console.error('Не найдены необходимые элементы интерфейса');
+        showNotification('error', 'Ошибка инициализации интерфейса');
+        return;
+    }
+
     syncButton.disabled = true;
     stopSyncButton.style.display = 'inline-block';
     syncStatus.style.display = 'block';
@@ -378,17 +421,17 @@ function syncWithICloud() {
                 updateSyncProgress();
             } else {
                 showNotification('error', data.error || 'Ошибка при запуске синхронизации');
-                syncStatus.style.display = 'none';
-                stopSyncButton.style.display = 'none';
-                syncButton.disabled = false;
+                if (syncStatus) syncStatus.style.display = 'none';
+                if (stopSyncButton) stopSyncButton.style.display = 'none';
+                if (syncButton) syncButton.disabled = false;
             }
         })
         .catch(error => {
             console.error('Ошибка при запуске синхронизации:', error);
             showNotification('error', 'Ошибка при запуске синхронизации');
-            syncStatus.style.display = 'none';
-            stopSyncButton.style.display = 'none';
-            syncButton.disabled = false;
+            if (syncStatus) syncStatus.style.display = 'none';
+            if (stopSyncButton) stopSyncButton.style.display = 'none';
+            if (syncButton) syncButton.disabled = false;
         });
 }
 
@@ -396,31 +439,47 @@ function updateSyncProgress() {
     fetch('/icloud/sync_status')
         .then(response => response.json())
         .then(data => {
-            const syncStatus = document.getElementById('sync-status');
+            const syncStatus = document.getElementById('syncStatus');
+            if (!syncStatus) return;
+
             const progressBar = syncStatus.querySelector('.progress-bar');
             const progressText = syncStatus.querySelector('.progress-text');
             const newPhotosText = syncStatus.querySelector('.new-photos-text');
             const errorList = syncStatus.querySelector('.error-list');
             const stopSyncButton = document.getElementById('stopSyncButton');
+            const syncButton = document.getElementById('syncButton');
             
+            // Показываем статус синхронизации
             syncStatus.style.display = 'block';
             
             if (data.status === 'syncing') {
-                const progress = (data.downloaded / data.total) * 100;
-                progressBar.style.width = `${progress}%`;
-                progressBar.textContent = `${Math.round(progress)}%`;
+                const progress = data.total > 0 ? (data.downloaded / data.total) * 100 : 0;
                 
-                progressText.textContent = `Загружено ${data.downloaded} из ${data.total} фотографий`;
-                newPhotosText.textContent = `Новых: ${data.new_photos}`;
-                
-                if (data.failed_photos && data.failed_photos.length > 0) {
-                    errorList.style.display = 'block';
-                    const ul = errorList.querySelector('ul');
-                    ul.innerHTML = data.failed_photos
-                        .map(file => `<li>${file}</li>`)
-                        .join('');
+                if (progressBar) {
+                    progressBar.style.width = `${progress}%`;
+                    progressBar.textContent = `${Math.round(progress)}%`;
+                    progressBar.setAttribute('aria-valuenow', progress);
                 }
                 
+                if (progressText) {
+                    progressText.textContent = `Загружено ${data.downloaded} из ${data.total} фотографий`;
+                }
+                
+                if (newPhotosText) {
+                    newPhotosText.textContent = `Новых фотографий: ${data.new_photos}`;
+                }
+                
+                if (errorList && data.failed_photos && data.failed_photos.length > 0) {
+                    errorList.style.display = 'block';
+                    const ul = errorList.querySelector('ul');
+                    if (ul) {
+                        ul.innerHTML = data.failed_photos
+                            .map(file => `<li>${file}</li>`)
+                            .join('');
+                    }
+                }
+                
+                // Продолжаем опрос каждую секунду
                 setTimeout(updateSyncProgress, 1000);
             } else if (data.status === 'completed' || data.status === 'error' || data.status === 'stopped') {
                 if (data.status === 'completed') {
@@ -429,7 +488,13 @@ function updateSyncProgress() {
                     showNotification('error', data.message || 'Произошла ошибка при синхронизации');
                 }
                 
-                stopSyncButton.style.display = 'none';
+                if (stopSyncButton) {
+                    stopSyncButton.style.display = 'none';
+                }
+                
+                if (syncButton) {
+                    syncButton.disabled = false;
+                }
                 
                 // Показываем финальный результат еще некоторое время
                 setTimeout(() => {
