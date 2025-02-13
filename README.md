@@ -1,48 +1,50 @@
 # iCloudVision
 
-🔍 Умный поиск по вашим фотографиям в iCloud
+🔍 Smart semantic search for your iCloud photos
 
-## Возможности
-- Автоматическая синхронизация фотографий с iCloud
-- Семантический поиск изображений по текстовому описанию
-- Поддержка HEIC формата с автоматической конвертацией
-- Веб-интерфейс с отслеживанием прогресса в реальном времени
-- Многопоточная обработка для быстрой синхронизации
-- Кэширование индекса изображений для оптимизации поиска
+[Русская версия](README.ru.md)
 
-## Технологии
-- Flask для веб-интерфейса
-- CLIP модель для семантического поиска
-- PyiCloud для работы с iCloud API
-- Pillow и pillow-heif для обработки изображений
-- Threading для асинхронных операций
+## Features
+- Automatic photo synchronization with iCloud
+- Semantic image search using natural language descriptions
+- HEIC format support with automatic conversion
+- Real-time progress tracking web interface
+- Multi-threaded processing for fast synchronization
+- Image index caching for optimized search performance
 
-## Установка
-1. Клонируйте репозиторий:
+## Technologies
+- Flask web interface
+- CLIP model for semantic search
+- PyiCloud for iCloud API integration
+- Pillow and pillow-heif for image processing
+- Threading for asynchronous operations
+
+## Installation
+1. Clone the repository:
 ```bash
 git clone https://github.com/Sppqq/iCloudVision.git
 cd iCloudVision
 ```
 
-2. Установите зависимости:
+2. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-## Использование
-1. Запустите веб-сервер:
+## Usage
+1. Start the web server:
 ```bash
 python app.py
 ```
 
-2. Откройте браузер и перейдите по адресу `http://localhost:5000`
-3. Войдите в свой аккаунт iCloud
-4. После синхронизации используйте поиск для нахождения нужных фотографий
+2. Open your browser and navigate to `http://localhost:5000`
+3. Log in to your iCloud account
+4. After synchronization, use search to find your photos
 
-## Безопасность
-- Поддержка двухфакторной аутентификации iCloud
-- Безопасное хранение учетных данных
-- Локальное хранение индекса изображений
+## Security
+- iCloud two-factor authentication support
+- Secure credentials storage
+- Local image index storage
 
-## Лицензия
+## License
 MIT License 
