@@ -109,7 +109,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 If you have questions or issues:
 - Create an Issue in the repository
-- Email us at support@icvision.dev
+- Email us at sppqq@duck.com
 
 ---
 
