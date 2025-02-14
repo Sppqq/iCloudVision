@@ -5,12 +5,26 @@ let currentPage = 1;
 let isLoading = false;
 let hasMore = true;
 
+// Добавляем переменные для отслеживания времени
+let progressStartTime = null;
+let lastProgressUpdate = null;
+let lastProgressPercent = 0;
+
 document.addEventListener('DOMContentLoaded', function() {
     const imagePreviewModalElement = document.getElementById('imagePreviewModal');
     const iCloudLoginModalElement = document.getElementById('iCloudLoginModal');
     
     if (imagePreviewModalElement) {
         imagePreviewModal = new bootstrap.Modal(imagePreviewModalElement);
+        
+        // Добавляем обработчик закрытия модального окна
+        imagePreviewModalElement.addEventListener('hidden.bs.modal', function () {
+            const videoElement = document.getElementById('previewVideo');
+            if (videoElement) {
+                videoElement.pause();
+                videoElement.currentTime = 0;
+            }
+        });
     }
     
     if (iCloudLoginModalElement) {
@@ -40,11 +54,40 @@ function hideLoading() {
     document.getElementById('loading').classList.add('d-none');
 }
 
-function showImagePreview(imagePath, confidence, originalPath) {
+function showImagePreview(mediaPath, confidence, originalPath) {
+    const previewContainer = document.getElementById('previewImage').parentElement;
     const previewImage = document.getElementById('previewImage');
     const imageInfo = document.getElementById('imageInfo');
     
-    previewImage.src = imagePath;
+    // Определяем тип файла по расширению
+    const fileExt = mediaPath.toLowerCase().split('.').pop();
+    const videoExtensions = ['mp4', 'mov', 'avi', 'mkv'];
+    
+    if (videoExtensions.includes(fileExt)) {
+        // Если это видео, создаем и показываем видео элемент
+        previewImage.style.display = 'none';
+        let videoElement = document.getElementById('previewVideo');
+        if (!videoElement) {
+            videoElement = document.createElement('video');
+            videoElement.id = 'previewVideo';
+            videoElement.className = 'img-fluid';
+            videoElement.controls = true;
+            previewContainer.insertBefore(videoElement, previewImage);
+        } else {
+            videoElement.style.display = 'block';
+        }
+        videoElement.src = mediaPath;
+    } else {
+        // Если это изображение, показываем img элемент
+        const videoElement = document.getElementById('previewVideo');
+        if (videoElement) {
+            videoElement.style.display = 'none';
+            videoElement.src = '';
+        }
+        previewImage.style.display = 'block';
+        previewImage.src = mediaPath;
+    }
+    
     imageInfo.innerHTML = `
         <div><strong>Путь:</strong> ${originalPath}</div>
         <div><strong>Уверенность:</strong> ${confidence}%</div>
@@ -148,7 +191,7 @@ function displayResults(results, clearExisting = true) {
     if (results.length === 0 && clearExisting) {
         resultsDiv.innerHTML = `
             <div class="col-12 text-center">
-                <h3 class="text-muted">Изображений не найдено</h3>
+                <h3 class="text-muted">Медиафайлов не найдено</h3>
             </div>
         `;
         return;
@@ -156,15 +199,29 @@ function displayResults(results, clearExisting = true) {
     
     results.forEach((result, index) => {
         const confidence = (result.score * 100).toFixed(1);
-        const imagePath = '/image/' + encodeURIComponent(result.path);
+        const mediaPath = '/media/' + encodeURIComponent(result.path);
+        
+        // Определяем тип файла
+        const fileExt = result.path.toLowerCase().split('.').pop();
+        const videoExtensions = ['mp4', 'mov', 'avi', 'mkv'];
+        const isVideo = videoExtensions.includes(fileExt);
         
         const div = document.createElement('div');
         div.innerHTML = `
-            <div class="image-card shadow" onclick="showImagePreview('${imagePath}', ${confidence}, '${result.path}')">
+            <div class="image-card shadow" onclick="showImagePreview('${mediaPath}', ${confidence}, '${result.path}')">
                 <div class="confidence-badge">
                     <i class="fas fa-percentage me-1"></i>${confidence}%
                 </div>
-                <img src="${imagePath}" alt="Результат ${index + 1}" loading="lazy">
+                ${isVideo ? `
+                    <video class="preview-video" preload="metadata">
+                        <source src="${mediaPath}" type="video/${fileExt}">
+                    </video>
+                    <div class="video-overlay">
+                        <i class="fas fa-play-circle"></i>
+                    </div>
+                ` : `
+                    <img src="${mediaPath}" alt="Результат ${index + 1}" loading="lazy">
+                `}
                 <div class="image-info">
                     <p class="mb-0 text-truncate">${result.path}</p>
                 </div>
@@ -185,91 +242,237 @@ function displayResults(results, clearExisting = true) {
     }
 }
 
-async function updateIndex() {
-    const indexingStatus = document.getElementById('indexing-status');
-    const progressBar = indexingStatus.querySelector('.progress-bar');
-    const progressText = indexingStatus.querySelector('.progress-text');
-    const infoPanel = document.getElementById('infoPanel');
+// Функции для управления прогресс-баром
+function showProgress(show = true) {
+    const progressContainer = document.getElementById('progressContainer');
+    progressContainer.style.display = show ? 'block' : 'none';
+}
+
+function updateProgress(percent, status) {
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const progressStatus = document.getElementById('progressStatus');
     
-    // Скрываем информационную панель
-    infoPanel.style.display = 'none';
+    if (!progressBar || !progressText || !progressStatus) {
+        return;
+    }
     
-    // Показываем статус
-    indexingStatus.style.display = 'block';
-    progressBar.style.width = '0%';
-    progressBar.textContent = '0%';
-    progressText.textContent = 'Обновление индекса...';
+    progressBar.style.width = `${percent}%`;
+    progressBar.setAttribute('aria-valuenow', percent);
+    progressText.textContent = `${percent}%`;
     
-    try {
-        const response = await fetch('/update_index', {
-            method: 'POST'
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            // Запускаем опрос статуса
-            checkIndexingStatus();
-        } else {
-            progressText.textContent = 'Ошибка при обновлении индекса: ' + (result.error || 'Неизвестная ошибка');
-            progressBar.style.width = '0%';
-            
-            setTimeout(() => {
-                indexingStatus.style.display = 'none';
-            }, 5000);
-        }
-    } catch (error) {
-        progressText.textContent = 'Ошибка при обновлении индекса: ' + error.message;
-        progressBar.style.width = '0%';
-        
-        setTimeout(() => {
-            indexingStatus.style.display = 'none';
-        }, 5000);
+    if (status) {
+        progressStatus.textContent = status;
     }
 }
 
-async function checkIndexingStatus() {
-    const indexingStatus = document.getElementById('indexing-status');
-    const progressBar = indexingStatus.querySelector('.progress-bar');
-    const progressText = indexingStatus.querySelector('.progress-text');
+// Функции для управления состоянием кнопок
+function setButtonsState(action, isProcessing) {
+    const indexButton = document.getElementById('indexButton');
+    const stopIndexButton = document.getElementById('stopIndexButton');
+    const syncButton = document.getElementById('syncButton');
+    const stopSyncButton = document.getElementById('stopSyncButton');
     
+    if (action === 'index') {
+        indexButton.disabled = isProcessing;
+        syncButton.disabled = isProcessing;
+        stopIndexButton.classList.toggle('d-none', !isProcessing);
+        indexButton.querySelector('i').classList.toggle('fa-spin', isProcessing);
+    } else if (action === 'sync') {
+        syncButton.disabled = isProcessing;
+        indexButton.disabled = isProcessing;
+        stopSyncButton.classList.toggle('d-none', !isProcessing);
+        syncButton.querySelector('i').classList.toggle('fa-spin', isProcessing);
+    }
+}
+
+// Обновляем функцию updateIndex
+async function updateIndex() {
     try {
-        const response = await fetch('/indexing_status');
-        const data = await response.json();
+        setButtonsState('index', true);
+        showProgress(true);
+        updateProgress(0, 'Начало индексации...');
         
-        if (data.status === 'running') {
-            const progress = data.total > 0 ? (data.current / data.total) * 100 : 0;
-            progressBar.style.width = `${progress}%`;
-            progressBar.textContent = `${Math.round(progress)}%`;
-            progressText.textContent = data.message;
+        const response = await fetch('/update_index', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        const eventSource = new EventSource('/indexing_progress');
+        
+        eventSource.onmessage = async function(event) {
+            const data = JSON.parse(event.data);
+            updateProgress(data.progress, data.status);
             
-            // Продолжаем опрос каждые 500мс
-            setTimeout(checkIndexingStatus, 500);
-        } else if (data.status === 'completed') {
-            progressBar.style.width = '100%';
-            progressBar.textContent = '100%';
-            progressText.textContent = 'Индексация завершена!';
-            
-            // Обновляем статистику
-            updateStatistics();
-            
-            // Скрываем через 3 секунды
-            setTimeout(() => {
-                indexingStatus.style.display = 'none';
-            }, 3000);
-        } else if (data.status === 'error') {
-            progressText.textContent = 'Ошибка: ' + data.message;
-            
-            setTimeout(() => {
-                indexingStatus.style.display = 'none';
-            }, 5000);
+            if (data.progress >= 100) {
+                eventSource.close();
+                setButtonsState('index', false);
+                showProgress(false);
+                
+                // Если статус содержит сообщение о том, что новых файлов нет
+                if (data.status && data.status.includes('Новых файлов для индексации не найдено')) {
+                    showNotification('info', translations[userSettings.getLanguage()].allFilesIndexed);
+                    return; // Прерываем выполнение, не перезапускаем сервер
+                }
+                
+                // Если были проиндексированы новые файлы, перезапускаем сервер
+                showNotification('success', 'Индексация завершена. Перезапуск сервера...');
+                
+                try {
+                    // Перезапускаем сервер
+                    await fetch('/restart_server', { method: 'POST' });
+                    
+                    // Ждем пока сервер перезапустится
+                    setTimeout(async function checkServer() {
+                        try {
+                            const response = await fetch('/');
+                            if (response.ok) {
+                                // Сервер снова доступен, перезагружаем страницу
+                                window.location.reload();
+                            } else {
+                                // Пробуем снова через секунду
+                                setTimeout(checkServer, 1000);
+                            }
+                        } catch {
+                            // Если сервер еще не доступен, пробуем снова
+                            setTimeout(checkServer, 1000);
+                        }
+                    }, 2000); // Даем серверу 2 секунды на начальный перезапуск
+                } catch (error) {
+                    console.error('Ошибка при перезапуске сервера:', error);
+                    showNotification('error', 'Ошибка при перезапуске сервера');
+                }
+            }
+        };
+
+        eventSource.onerror = function() {
+            eventSource.close();
+            showProgress(false);
+            setButtonsState('index', false);
+            showError('Ошибка при получении прогресса индексации');
+        };
+
+    } catch (error) {
+        showProgress(false);
+        setButtonsState('index', false);
+        showError('Ошибка при обновлении индекса: ' + error.message);
+    }
+}
+
+// Функция остановки индексации
+async function stopIndexing() {
+    try {
+        const response = await fetch('/stop_indexing', {
+            method: 'POST'
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            showNotification('success', 'Индексация остановлена');
+            setButtonsState('index', false);
+            showProgress(false);
+        } else {
+            showNotification('error', data.error || 'Не удалось остановить индексацию');
         }
     } catch (error) {
-        progressText.textContent = 'Ошибка при получении статуса: ' + error.message;
+        showNotification('error', 'Ошибка при остановке индексации');
+    }
+}
+
+// Обновляем функцию для синхронизации с iCloud
+document.getElementById('syncButton').addEventListener('click', async function() {
+    try {
+        setButtonsState('sync', true);
+        showProgress(true);
+        updateProgress(0, 'Начало синхронизации с iCloud...');
         
-        setTimeout(() => {
-            indexingStatus.style.display = 'none';
-        }, 5000);
+        const response = await fetch('/sync_icloud', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        const eventSource = new EventSource('/sync_progress');
+        
+        eventSource.onmessage = async function(event) {
+            const data = JSON.parse(event.data);
+            updateProgress(data.progress, data.status);
+            
+            if (data.progress >= 100) {
+                eventSource.close();
+                showNotification('success', 'Синхронизация завершена. Перезапуск сервера...');
+                
+                try {
+                    // Перезапускаем сервер
+                    await fetch('/restart_server', { method: 'POST' });
+                    
+                    // Ждем пока сервер перезапустится
+                    setTimeout(async function checkServer() {
+                        try {
+                            const response = await fetch('/');
+                            if (response.ok) {
+                                // Сервер снова доступен, перезагружаем страницу
+                                window.location.reload();
+                            } else {
+                                // Пробуем снова через секунду
+                                setTimeout(checkServer, 1000);
+                            }
+                        } catch {
+                            // Если сервер еще не доступен, пробуем снова
+                            setTimeout(checkServer, 1000);
+                        }
+                    }, 2000); // Даем серверу 2 секунды на начальный перезапуск
+                } catch (error) {
+                    console.error('Ошибка при перезапуске сервера:', error);
+                    showNotification('error', 'Ошибка при перезапуске сервера');
+                    showProgress(false);
+                    setButtonsState('sync', false);
+                }
+            }
+        };
+
+        eventSource.onerror = function() {
+            eventSource.close();
+            showProgress(false);
+            setButtonsState('sync', false);
+            showError('Ошибка при получении прогресса синхронизации');
+        };
+
+    } catch (error) {
+        showProgress(false);
+        setButtonsState('sync', false);
+        showError('Ошибка при синхронизации с iCloud: ' + error.message);
+    }
+});
+
+// Обновляем функцию остановки синхронизации
+async function stopSync() {
+    try {
+        const response = await fetch('/icloud/stop_sync', {
+            method: 'POST'
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            showNotification('success', 'Синхронизация остановлена');
+            setButtonsState('sync', false);
+            showProgress(false);
+        } else {
+            showNotification('error', data.error || 'Не удалось остановить синхронизацию');
+        }
+    } catch (error) {
+        showNotification('error', 'Ошибка при остановке синхронизации');
     }
 }
 
@@ -307,23 +510,6 @@ function showNotification(type, messageKey, duration = 5000) {
         setTimeout(() => {
             notification.style.display = 'none';
         }, duration);
-    }
-}
-
-async function stopSync() {
-    try {
-        const response = await fetch('/icloud/stop_sync', {
-            method: 'POST'
-        });
-        
-        const data = await response.json();
-        if (data.success) {
-            showNotification('success', 'Синхронизация остановлена');
-        } else {
-            showNotification('error', data.error || 'Не удалось остановить синхронизацию');
-        }
-    } catch (error) {
-        showNotification('error', 'Ошибка при остановке синхронизации');
     }
 }
 
@@ -399,20 +585,45 @@ async function submitICloudLogin() {
             iCloudLoginModal.hide();
         }
         
-        // Привязываем функции к кнопкам
-        const syncButtonElement = document.getElementById('syncButton');
-        const stopSyncButtonElement = document.getElementById('stopSyncButton');
+        // Показываем прогресс-бар и меняем состояние кнопок
+        setButtonsState('sync', true);
+        showProgress(true);
+        updateProgress(0, 'Начало синхронизации с iCloud...');
         
-        if (syncButtonElement) {
-            syncButtonElement.onclick = syncWithICloud;
-        }
-        if (stopSyncButtonElement) {
-            stopSyncButtonElement.onclick = stopSync;
-        }
+        // Запускаем отслеживание прогресса синхронизации
+        const eventSource = new EventSource('/sync_progress');
+        eventSource.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            updateProgress(data.progress, data.status);
+            
+            if (data.progress >= 100) {
+                eventSource.close();
+                showNotification('success', 'Синхронизация завершена. Перезапуск сервера...');
+                
+                // Перезапускаем сервер после завершения
+                fetch('/restart_server', { method: 'POST' })
+                    .then(() => {
+                        setTimeout(function checkServer() {
+                            fetch('/')
+                                .then(response => {
+                                    if (response.ok) {
+                                        window.location.reload();
+                                    } else {
+                                        setTimeout(checkServer, 1000);
+                                    }
+                                })
+                                .catch(() => setTimeout(checkServer, 1000));
+                        }, 2000);
+                    });
+            }
+        };
         
-        console.log('Начинаем синхронизацию...');
-        // Начинаем синхронизацию
-        await syncWithICloud();
+        eventSource.onerror = function() {
+            eventSource.close();
+            showProgress(false);
+            setButtonsState('sync', false);
+            showError('Ошибка при получении прогресса синхронизации');
+        };
 
     } catch (error) {
         console.error('Ошибка при подключении:', error);
@@ -533,9 +744,6 @@ function updateSyncProgress() {
         });
 }
 
-// Добавляем обработчик события для кнопки синхронизации
-document.getElementById('syncButton').addEventListener('click', syncWithICloud);
-
 // Функция для переключения темы
 function toggleTheme() {
     const html = document.documentElement;
@@ -582,7 +790,58 @@ function toggleLanguage() {
     updateTexts();
 }
 
-// Инициализация при загрузке страницы
+// Функция для проверки текущего статуса операций
+async function checkOperationsStatus() {
+    try {
+        // Проверяем статус индексации
+        const indexingResponse = await fetch('/indexing_status');
+        const indexingData = await indexingResponse.json();
+        
+        if (indexingData.status === "running") {
+            setButtonsState('index', true);
+            showProgress(true);
+            
+            // Запускаем отслеживание прогресса индексации
+            const eventSource = new EventSource('/indexing_progress');
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                updateProgress(data.progress, data.status);
+                
+                if (data.progress >= 100) {
+                    eventSource.close();
+                    setButtonsState('index', false);
+                    showProgress(false);
+                }
+            };
+        }
+        
+        // Проверяем статус синхронизации
+        const syncResponse = await fetch('/icloud/sync_status');
+        const syncData = await syncResponse.json();
+        
+        if (syncData.status === "syncing") {
+            setButtonsState('sync', true);
+            showProgress(true);
+            
+            // Запускаем отслеживание прогресса синхронизации
+            const eventSource = new EventSource('/sync_progress');
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                updateProgress(data.progress, data.status);
+                
+                if (data.progress >= 100) {
+                    eventSource.close();
+                    setButtonsState('sync', false);
+                    showProgress(false);
+                }
+            };
+        }
+    } catch (error) {
+        console.error('Ошибка при проверке статуса операций:', error);
+    }
+}
+
+// Обновляем инициализацию при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
     // Инициализация темы
     const savedTheme = userSettings.getTheme();
@@ -604,8 +863,14 @@ document.addEventListener('DOMContentLoaded', () => {
     checkIndex();
     updateStatistics();
     
+    // Проверяем статус текущих операций
+    checkOperationsStatus();
+    
     // Обновляем статистику каждые 30 секунд
     setInterval(updateStatistics, 30000);
+
+    // Загружаем сохраненные учетные данные
+    loadSavedCredentials();
 });
 
 // Добавляем функцию для обновления статистики
@@ -615,15 +880,29 @@ async function updateStatistics() {
         const data = await response.json();
         const texts = translations[userSettings.getLanguage()];
         
-        document.getElementById('totalImages').textContent = data.total_images || '0';
-        document.getElementById('lastUpdate').textContent = data.last_update || texts.never;
-        document.getElementById('syncStatus').textContent = data.sync_status || texts.notSynced;
+        document.getElementById('totalFiles').textContent = data.total_files;
+        document.getElementById('totalImages').textContent = data.total_images;
+        document.getElementById('totalVideos').textContent = data.total_videos;
+        document.getElementById('lastUpdate').textContent = data.last_update;
+        document.getElementById('syncStatus').textContent = data.sync_status;
+        
+        // Обновляем время последнего обновления
+        const lastUpdateElement = document.getElementById('lastUpdate');
+        if (lastUpdateElement) {
+            const lastUpdate = data.last_update || texts.never;
+            lastUpdateElement.textContent = lastUpdate;
+            
+            // Добавляем тултип с точным временем, если есть
+            if (lastUpdate !== texts.never && lastUpdate !== "только что") {
+                lastUpdateElement.title = `Обновлено ${lastUpdate}`;
+            }
+        }
     } catch (error) {
-        console.error('Error updating statistics:', error);
+        console.error('Ошибка при обновлении статистики:', error);
     }
 }
 
-// Функция для проверки наличия индекса
+// Обновляем функцию проверки индекса
 async function checkIndex() {
     try {
         const response = await fetch('/check_index');
@@ -634,12 +913,189 @@ async function checkIndex() {
             const infoPanelText = document.getElementById('infoPanelText');
             const texts = translations[userSettings.getLanguage()];
             
-            infoPanelText.textContent = texts.noIndex;
-            infoPanel.style.display = 'block';
-            
-            updateIndex();
+            if (infoPanel && infoPanelText) {
+                infoPanelText.textContent = texts.noIndex;
+                infoPanel.style.display = 'block';
+            }
         }
     } catch (error) {
         console.error('Error checking index:', error);
+    }
+}
+
+function startIndexing() {
+    const indexButton = document.getElementById('indexButton');
+    const progressIndicator = document.getElementById('progressIndicator');
+    
+    console.log('Начало индексации');
+    indexButton.disabled = true;
+    progressIndicator.style.display = 'block';
+    
+    fetch('/update_index', {
+        method: 'POST'
+    }).then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            console.error('Ошибка при запуске индексации:', data.error);
+            showNotification('error', 'Ошибка при запуске индексации');
+            indexButton.disabled = false;
+            progressIndicator.style.display = 'none';
+            return;
+        }
+        
+        console.log('Индексация запущена успешно, подключаемся к потоку событий');
+        const eventSource = new EventSource('/indexing_progress');
+        
+        eventSource.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            console.log('Получено событие индексации:', data);
+            updateProgress(data.progress, data.status);
+            
+            // Проверяем статус индексации
+            if (data.state === "no_new_files") {
+                console.log('Нет новых файлов для индексации');
+                showNotification('info', translations[userSettings.getLanguage()].allFilesIndexed);
+                eventSource.close();
+                indexButton.disabled = false;
+                progressIndicator.style.display = 'none';
+                return;
+            }
+            
+            if (data.state === "error") {
+                console.error('Ошибка при индексации:', data.status);
+                showNotification('error', data.status);
+                eventSource.close();
+                indexButton.disabled = false;
+                progressIndicator.style.display = 'none';
+                return;
+            }
+            
+            if (data.progress >= 100 || data.state === "completed") {
+                console.log('Индексация завершена, статус:', data.state);
+                eventSource.close();
+                indexButton.disabled = false;
+                progressIndicator.style.display = 'none';
+                
+                // Перезапускаем сервер только если были проиндексированы новые файлы
+                if (data.state === "completed") {
+                    console.log('Перезапуск сервера после успешной индексации');
+                    showNotification('success', 'Индексация завершена. Перезапуск сервера...');
+                    fetch('/restart_server', { method: 'POST' })
+                        .then(() => {
+                            setTimeout(function checkServer() {
+                                fetch('/')
+                                    .then(response => {
+                                        if (response.ok) {
+                                            console.log('Сервер перезапущен успешно, перезагружаем страницу');
+                                            window.location.reload();
+                                        } else {
+                                            console.log('Сервер ещё не готов, ждём...');
+                                            setTimeout(checkServer, 1000);
+                                        }
+                                    })
+                                    .catch(() => {
+                                        console.log('Ошибка подключения к серверу, пробуем снова...');
+                                        setTimeout(checkServer, 1000);
+                                    });
+                            }, 2000);
+                        });
+                }
+            }
+        };
+        
+        eventSource.onerror = function(error) {
+            console.error('Ошибка в потоке событий индексации:', error);
+            eventSource.close();
+            showNotification('error', 'Ошибка при получении статуса индексации');
+            indexButton.disabled = false;
+            progressIndicator.style.display = 'none';
+        };
+    })
+    .catch(error => {
+        console.error('Ошибка при запуске индексации:', error);
+        showNotification('error', 'Ошибка при запуске индексации');
+        indexButton.disabled = false;
+        progressIndicator.style.display = 'none';
+    });
+}
+
+// Функция для загрузки сохраненных учетных данных
+async function loadSavedCredentials() {
+    try {
+        const response = await fetch('/icloud/load_credentials');
+        const data = await response.json();
+        if (data.success && data.credentials) {
+            document.getElementById('username').value = data.credentials.username;
+            // Устанавливаем чекбокс "Запомнить"
+            document.getElementById('remember-credentials').checked = true;
+        }
+    } catch (error) {
+        console.error('Ошибка при загрузке учетных данных:', error);
+    }
+}
+
+// Функция для удаления сохраненных учетных данных
+async function deleteSavedCredentials() {
+    try {
+        const response = await fetch('/icloud/delete_credentials', {
+            method: 'POST'
+        });
+        const data = await response.json();
+        if (data.success) {
+            // Очищаем поля
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('remember-credentials').checked = false;
+        }
+    } catch (error) {
+        console.error('Ошибка при удалении учетных данных:', error);
+    }
+}
+
+// Функция для подключения к iCloud
+async function connectToiCloud() {
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const remember = document.getElementById('remember-credentials').checked;
+
+    if (!username || !password) {
+        showError('Пожалуйста, введите логин и пароль');
+        return;
+    }
+
+    showLoading('Подключение к iCloud...');
+
+    try {
+        const response = await fetch('/icloud/connect', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                username,
+                password,
+                remember
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            if (data.message && data.message.startsWith('2fa')) {
+                // Показываем форму двухфакторной аутентификации
+                showTwoFactorAuth();
+            } else {
+                // Успешное подключение
+                hideLoginForm();
+                startSync();
+            }
+        } else {
+            showError(data.error || 'Ошибка подключения');
+        }
+    } catch (error) {
+        showError('Ошибка подключения к серверу');
+        console.error(error);
+    } finally {
+        hideLoading();
     }
 } 
