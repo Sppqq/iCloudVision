@@ -13,15 +13,38 @@
         <div class="container">
             <a class="navbar-brand" href="/"><i class="fas fa-images me-2"></i><span data-translate="title">Image Search</span></a>
             <div class="d-flex align-items-center gap-3">
+                <!-- Основные действия -->
+                <div class="actions-group">
+                    <div class="btn-group">
+                        <button class="btn btn-outline-primary action-btn" id="indexButton" onclick="updateIndex()">
+                            <i class="fas fa-sync-alt"></i>
+                            <span data-translate="updateIndex">Update Index</span>
+                        </button>
+                        <button class="btn btn-outline-danger action-btn d-none" id="stopIndexButton" onclick="stopIndexing()">
+                            <i class="fas fa-stop"></i>
+                            <span>Остановить индексацию</span>
+                        </button>
+                    </div>
+                    <div class="btn-group">
+                        <button id="syncButton" class="btn btn-outline-primary action-btn">
+                            <i class="fas fa-cloud"></i>
+                            <span data-translate="syncWithICloud">Sync with iCloud</span>
+                        </button>
+                        <button id="stopSyncButton" class="btn btn-outline-danger action-btn d-none" onclick="stopSync()">
+                            <i class="fas fa-stop"></i>
+                            <span>Остановить синхронизацию</span>
+                        </button>
+                    </div>
+                </div>
                 <!-- Настройки -->
                 <div class="settings-group">
                     <!-- Переключатель языка -->
-                    <button class="btn btn-outline-secondary settings-btn" id="languageToggle">
+                    <button class="btn btn-outline-secondary settings-btn" id="languageToggle" onclick="toggleLanguage()">
                         <i class="fas fa-globe"></i>
                         <span>EN</span>
                     </button>
                     <!-- Переключатель темы -->
-                    <button class="btn btn-outline-secondary settings-btn" id="themeToggle">
+                    <button class="btn btn-outline-secondary settings-btn" id="themeToggle" onclick="toggleTheme()">
                         <i class="fas fa-moon"></i>
                     </button>
                 </div>

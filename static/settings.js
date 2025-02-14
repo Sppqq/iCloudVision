@@ -143,6 +143,67 @@ const translations = {
 
 const userSettings = new UserSettings();
 
+// Функция для переключения темы
+function toggleTheme() {
+    const html = document.documentElement;
+    const currentTheme = html.getAttribute('data-theme');
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    
+    html.setAttribute('data-theme', newTheme);
+    userSettings.setTheme(newTheme);
+    
+    // Обновляем иконку
+    const themeIcon = document.querySelector('#themeToggle i');
+    themeIcon.className = newTheme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
+}
+
+// Функция для переключения языка
+function toggleLanguage() {
+    const currentLang = userSettings.getLanguage();
+    const newLang = currentLang === 'en' ? 'ru' : 'en';
+    userSettings.setLanguage(newLang);
+    
+    // Обновляем текст кнопки
+    const langButton = document.getElementById('languageToggle');
+    langButton.querySelector('span').textContent = newLang.toUpperCase();
+    
+    // Обновляем все переводимые элементы на странице
+    document.querySelectorAll('[data-translate]').forEach(element => {
+        const key = element.getAttribute('data-translate');
+        if (element.tagName === 'INPUT' && element.getAttribute('placeholder')) {
+            element.placeholder = translations[newLang][key];
+        } else {
+            element.textContent = translations[newLang][key];
+        }
+    });
+}
+
+// Инициализация при загрузке страницы
+document.addEventListener('DOMContentLoaded', () => {
+    // Устанавливаем начальную тему
+    const savedTheme = userSettings.getTheme();
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    const themeIcon = document.querySelector('#themeToggle i');
+    themeIcon.className = savedTheme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
+    
+    // Устанавливаем начальный язык
+    const savedLang = userSettings.getLanguage();
+    const langButton = document.getElementById('languageToggle');
+    langButton.querySelector('span').textContent = savedLang.toUpperCase();
+    
+    // Применяем переводы
+    document.querySelectorAll('[data-translate]').forEach(element => {
+        const key = element.getAttribute('data-translate');
+        if (element.tagName === 'INPUT' && element.getAttribute('placeholder')) {
+            element.placeholder = translations[savedLang][key];
+        } else {
+            element.textContent = translations[savedLang][key];
+        }
+    });
+});
+
 // Export for use in other files
 window.userSettings = userSettings;
-window.translations = translations; 
+window.translations = translations;
+window.toggleTheme = toggleTheme;
+window.toggleLanguage = toggleLanguage; 
