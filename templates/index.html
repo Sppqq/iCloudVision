@@ -13,24 +13,39 @@
         <div class="container">
             <a class="navbar-brand" href="/"><i class="fas fa-images me-2"></i><span data-translate="title">Image Search</span></a>
             <div class="d-flex align-items-center gap-3">
+                <!-- Основные действия -->
+                <div class="actions-group">
+                    <div class="btn-group">
+                        <button class="btn btn-outline-primary action-btn" id="indexButton" onclick="updateIndex()">
+                            <i class="fas fa-sync-alt"></i>
+                            <span data-translate="updateIndex">Update Index</span>
+                        </button>
+                        <button class="btn btn-outline-danger action-btn d-none" id="stopIndexButton" onclick="stopIndexing()">
+                            <i class="fas fa-stop"></i>
+                            <span>Остановить индексацию</span>
+                        </button>
+                    </div>
+                    <div class="btn-group">
+                        <button id="syncButton" class="btn btn-outline-primary action-btn">
+                            <i class="fas fa-cloud"></i>
+                            <span data-translate="syncWithICloud">Sync with iCloud</span>
+                        </button>
+                        <button id="stopSyncButton" class="btn btn-outline-danger action-btn d-none" onclick="stopSync()">
+                            <i class="fas fa-stop"></i>
+                            <span>Остановить синхронизацию</span>
+                        </button>
+                    </div>
+                </div>
                 <!-- Настройки -->
                 <div class="settings-group">
                     <!-- Переключатель языка -->
-                    <button class="btn btn-outline-secondary" id="languageToggle">
-                        <i class="fas fa-globe me-1"></i>EN
+                    <button class="btn btn-outline-secondary settings-btn" id="languageToggle">
+                        <i class="fas fa-globe"></i>
+                        <span>EN</span>
                     </button>
                     <!-- Переключатель темы -->
-                    <button class="btn btn-outline-secondary" id="themeToggle">
+                    <button class="btn btn-outline-secondary settings-btn" id="themeToggle">
                         <i class="fas fa-moon"></i>
-                    </button>
-                </div>
-                <!-- Основные действия -->
-                <div class="actions-group">
-                    <button class="btn btn-primary" onclick="updateIndex()">
-                        <i class="fas fa-sync-alt me-2"></i><span data-translate="updateIndex">Update Index</span>
-                    </button>
-                    <button id="syncButton" class="btn btn-primary">
-                        <i class="fas fa-cloud me-2"></i><span data-translate="syncWithICloud">Sync with iCloud</span>
                     </button>
                 </div>
             </div>
@@ -102,35 +117,15 @@
             </div>
         </div>
 
-        <div class="controls">
-            <div class="sync-buttons">
-                <button id="syncButton" class="btn btn-primary">Синхронизировать с iCloud Photos</button>
-                <button id="stopSyncButton" class="btn btn-danger" style="display: none;">Остановить синхронизацию</button>
-            </div>
-            <div class="notifications">
-                <div id="syncStatus" class="sync-status">
-                    <div class="progress">
-                        <div class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
-                    </div>
-                    <div class="progress-text"></div>
-                    <div class="new-photos-text"></div>
-                    <div class="error-list" style="display: none;">
-                        <h5>Ошибки загрузки:</h5>
-                        <ul></ul>
-                    </div>
+        <!-- Прогресс-бар -->
+        <div id="progressContainer" class="progress-container mt-4" style="display: none;">
+            <div class="progress">
+                <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                     role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+                    <span id="progressText">0%</span>
                 </div>
-                <div id="errorNotification" class="notification error" style="display: none;"></div>
-                <div id="successNotification" class="notification success" style="display: none;"></div>
             </div>
-        </div>
-
-        <div id="indexing-status" class="progress-container" style="display: none;">
-            <div class="progress-bar-wrapper">
-                <div class="progress-bar" role="progressbar" style="width: 0%">0%</div>
-            </div>
-            <div class="progress-details">
-                <span class="progress-text">Обработано 0 из 0 изображений</span>
-            </div>
+            <div id="progressStatus" class="text-center mt-2 text-muted"></div>
         </div>
 
         <div id="results" class="results-grid">
@@ -160,15 +155,43 @@
                 <div class="col-md-6">
                     <div class="info-card">
                         <h4><i class="fas fa-lightbulb me-2"></i>Как использовать</h4>
-                        <p>Для поиска изображений просто введите описание того, что хотите найти. Например:</p>
+                        <p>Для поиска изображений просто введите описание того, что хотите найти. <strong>Важно: поиск работает только на английском языке!</strong> Например:</p>
                         <ul class="example-list">
-                            <li><i class="fas fa-arrow-right me-2"></i>"закат на пляже"</li>
-                            <li><i class="fas fa-arrow-right me-2"></i>"человек в красной куртке"</li>
-                            <li><i class="fas fa-arrow-right me-2"></i>"горный пейзаж"</li>
+                            <li><i class="fas fa-arrow-right me-2"></i>"sunset on the beach"</li>
+                            <li><i class="fas fa-arrow-right me-2"></i>"person in red jacket"</li>
+                            <li><i class="fas fa-arrow-right me-2"></i>"mountain landscape"</li>
                         </ul>
-                        <p class="mt-3">Чем точнее описание, тем лучше будут результаты поиска.</p>
+                        <p class="mt-3">Чем точнее описание на английском языке, тем лучше будут результаты поиска.</p>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <div class="stats-container">
+            <div class="stat-item">
+                <i class="fas fa-images"></i>
+                <span class="stat-label" data-translate="totalFiles">Total Files</span>
+                <span class="stat-value" id="totalFiles">0</span>
+            </div>
+            <div class="stat-item">
+                <i class="fas fa-image"></i>
+                <span class="stat-label" data-translate="totalImages">Total Images</span>
+                <span class="stat-value" id="totalImages">0</span>
+            </div>
+            <div class="stat-item">
+                <i class="fas fa-video"></i>
+                <span class="stat-label" data-translate="totalVideos">Total Videos</span>
+                <span class="stat-value" id="totalVideos">0</span>
+            </div>
+            <div class="stat-item">
+                <i class="fas fa-clock"></i>
+                <span class="stat-label" data-translate="lastUpdate">Last Update</span>
+                <span class="stat-value" id="lastUpdate">Never</span>
+            </div>
+            <div class="stat-item">
+                <i class="fas fa-sync"></i>
+                <span class="stat-label" data-translate="syncStatus">Sync Status</span>
+                <span class="stat-value" id="syncStatus">Not synced</span>
             </div>
         </div>
     </div>

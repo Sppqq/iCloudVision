@@ -2,4 +2,9 @@ DeepImageSearch==1.4
 Pillow>=9.0.0
 numpy>=1.19.5
 tensorflow>=2.4.0
-tqdm>=4.59.0 
+tqdm>=4.59.0
+pillow-heif>=0.15.0
+pyicloud>=1.0.0
+opencv-python>=4.8.0
+cryptography>=41.0.0
+colorama>=0.4.6 

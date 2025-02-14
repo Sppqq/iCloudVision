@@ -7,6 +7,8 @@ import pickle
 import json
 from cryptography.fernet import Fernet
 from config import SESSION_FILE, ENCRYPTION_KEY
+import pillow_heif
+from PIL import Image
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -19,6 +21,17 @@ class ICloudSync:
         self.photos_dir = Path("Photos")
         self.photos_dir.mkdir(exist_ok=True)
         
+    def is_authenticated(self):
+        """Проверяет, аутентифицирован ли пользователь"""
+        try:
+            if not self.api:
+                return False
+            # Пробуем получить доступ к устройствам - это вызовет ошибку, если сессия недействительна
+            self.api.devices
+            return True
+        except:
+            return False
+
     def connect(self):
         """Подключается к iCloud"""
         try:
@@ -46,6 +59,38 @@ class ICloudSync:
         except Exception as e:
             logger.error(f"Ошибка при проверке кода 2FA: {str(e)}")
             return False
+
+    def convert_heic_to_jpeg(self, heic_path):
+        """Конвертирует HEIC файл в JPEG формат"""
+        try:
+            # Получаем путь для нового JPEG файла
+            jpeg_path = os.path.splitext(str(heic_path))[0] + '.jpg'
+            
+            # Если JPEG файл уже существует, пропускаем конвертацию
+            if os.path.exists(jpeg_path):
+                return jpeg_path
+                
+            # Читаем HEIC файл
+            heif_file = pillow_heif.read_heif(str(heic_path))
+            # Конвертируем в PIL Image
+            image = Image.frombytes(
+                heif_file.mode,
+                heif_file.size,
+                heif_file.data,
+                "raw",
+            )
+            
+            # Сохраняем как JPEG
+            image.save(jpeg_path, 'JPEG', quality=95)
+            
+            # Удаляем оригинальный HEIC файл
+            os.remove(str(heic_path))
+            
+            logger.info(f"Успешно конвертирован файл {heic_path} в JPEG")
+            return jpeg_path
+        except Exception as e:
+            logger.error(f"Ошибка при конвертации {heic_path}: {str(e)}")
+            return None
 
     def sync_photos(self, progress_callback=None):
         if not self.api:
@@ -87,7 +132,7 @@ class ICloudSync:
                     if success and is_new:
                         new_photos += 1
                     if progress_callback:
-                        progress = (downloaded / total) * 100
+                        progress = round((downloaded / total) * 100)  # Округляем процент
                         progress_callback(progress, downloaded, total, new_photos)
 
             # Запускаем поток обновления прогресса
@@ -113,8 +158,15 @@ class ICloudSync:
                     
                     # Проверяем, существует ли уже файл
                     if download_path.exists():
-                        progress_queue.put((True, False))
-                        return None
+                        # Если это HEIC файл, конвертируем его
+                        if str(download_path).lower().endswith('.heic'):
+                            jpeg_path = self.convert_heic_to_jpeg(download_path)
+                            if jpeg_path:
+                                progress_queue.put((True, True))
+                                return None
+                        else:
+                            progress_queue.put((True, False))
+                            return None
 
                     logger.info(f"Скачиваем {filename}...")
                     
@@ -133,8 +185,16 @@ class ICloudSync:
                                 # Проверяем, что файл действительно создан и не пустой
                                 if download_path.exists() and download_path.stat().st_size > 0:
                                     logger.info(f"Успешно скачано: {filename}")
-                                    progress_queue.put((True, True))
-                                    return None
+                                    
+                                    # Если это HEIC файл, конвертируем его
+                                    if str(download_path).lower().endswith('.heic'):
+                                        jpeg_path = self.convert_heic_to_jpeg(download_path)
+                                        if jpeg_path:
+                                            progress_queue.put((True, True))
+                                            return None
+                                    else:
+                                        progress_queue.put((True, True))
+                                        return None
                                 else:
                                     logger.warning(f"Попытка {attempt + 1}: Файл не был создан или пустой: {filename}")
                                     if download_path.exists():

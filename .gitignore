@@ -45,6 +45,11 @@ Photos/
 *.index
 *.pkl
 *.db
+indexing_state.json
+icloud_session.dat
+indexing_progress.json
+credentials.enc
+.device_id
 
 # Logs
 *.log
