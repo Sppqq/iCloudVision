@@ -146,26 +146,40 @@ const userSettings = new UserSettings();
 // Функция для переключения темы
 function toggleTheme() {
     const html = document.documentElement;
-    const currentTheme = html.getAttribute('data-theme');
+    const themeIcon = document.querySelector('#themeToggle i');
+    
+    if (!html || !themeIcon) {
+        console.error('Элементы темы не найдены');
+        return;
+    }
+    
+    const currentTheme = html.getAttribute('data-theme') || 'light';
     const newTheme = currentTheme === 'light' ? 'dark' : 'light';
     
     html.setAttribute('data-theme', newTheme);
     userSettings.setTheme(newTheme);
     
     // Обновляем иконку
-    const themeIcon = document.querySelector('#themeToggle i');
     themeIcon.className = newTheme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
 }
 
 // Функция для переключения языка
 function toggleLanguage() {
+    const langButton = document.getElementById('languageToggle');
+    if (!langButton) {
+        console.error('Кнопка языка не найдена');
+        return;
+    }
+    
     const currentLang = userSettings.getLanguage();
     const newLang = currentLang === 'en' ? 'ru' : 'en';
     userSettings.setLanguage(newLang);
     
     // Обновляем текст кнопки
-    const langButton = document.getElementById('languageToggle');
-    langButton.querySelector('span').textContent = newLang.toUpperCase();
+    const langSpan = langButton.querySelector('span');
+    if (langSpan) {
+        langSpan.textContent = newLang.toUpperCase();
+    }
     
     // Обновляем все переводимые элементы на странице
     document.querySelectorAll('[data-translate]').forEach(element => {

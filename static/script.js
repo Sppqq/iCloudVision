@@ -42,6 +42,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Проверяем статус авторизации при загрузке
     checkICloudAuth();
+
+    // Загружаем сохраненные настройки
+    loadSavedTheme();
+    loadSavedLanguage();
 });
 
 function showLoading() {
@@ -252,6 +256,7 @@ function updateProgress(percent, status) {
     const progressBar = document.getElementById('progressBar');
     const progressText = document.getElementById('progressText');
     const progressStatus = document.getElementById('progressStatus');
+    const progressInfo = document.querySelector('.progress-info .progress-text:last-child');
     
     if (!progressBar || !progressText || !progressStatus) {
         return;
@@ -263,6 +268,15 @@ function updateProgress(percent, status) {
     
     if (status) {
         progressStatus.textContent = status;
+        // Обновляем информацию о загрузке
+        if (progressInfo) {
+            progressInfo.textContent = status;
+        }
+        // Обновляем информацию в поле поиска
+        const searchInfo = document.querySelector('.search-info');
+        if (searchInfo) {
+            searchInfo.textContent = status;
+        }
     }
 }
 
@@ -746,48 +760,108 @@ function updateSyncProgress() {
 
 // Функция для переключения темы
 function toggleTheme() {
-    const html = document.documentElement;
-    const currentTheme = html.getAttribute('data-theme');
-    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    const root = document.documentElement;
+    const currentTheme = root.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', newTheme);
     
-    html.setAttribute('data-theme', newTheme);
+    // Сохраняем выбранную тему в localStorage
     localStorage.setItem('theme', newTheme);
     
     // Обновляем иконку
     const themeIcon = document.querySelector('#themeToggle i');
-    themeIcon.className = newTheme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
+    themeIcon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
 }
 
-// Функция для обновления текстов на странице
-function updateTexts() {
-    const currentLang = userSettings.getLanguage();
-    const texts = translations[currentLang];
+// Функция для загрузки сохраненной темы
+function loadSavedTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    const root = document.documentElement;
+    root.setAttribute('data-theme', savedTheme);
     
-    // Обновляем все элементы с атрибутом data-translate
-    document.querySelectorAll('[data-translate]').forEach(element => {
-        const key = element.getAttribute('data-translate');
-        if (element.tagName === 'INPUT' && element.getAttribute('placeholder')) {
-            element.placeholder = texts[key];
-        } else {
-            element.textContent = texts[key];
-        }
-    });
-    
-    // Обновляем заголовок страницы
-    document.title = texts.title;
-    
-    // Обновляем текст кнопки языка
-    const langButton = document.getElementById('languageToggle');
-    langButton.innerHTML = `<i class="fas fa-globe me-1"></i>${currentLang.toUpperCase()}`;
+    // Обновляем иконку
+    const themeIcon = document.querySelector('#themeToggle i');
+    if (themeIcon) {
+        themeIcon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+    }
 }
 
 // Функция для переключения языка
 function toggleLanguage() {
-    const currentLang = userSettings.getLanguage();
+    const langButton = document.querySelector('#languageToggle span');
+    const currentLang = localStorage.getItem('language') || 'en';
     const newLang = currentLang === 'en' ? 'ru' : 'en';
-    userSettings.setLanguage(newLang);
-    document.documentElement.setAttribute('lang', newLang);
+    
+    // Сохраняем выбранный язык
+    localStorage.setItem('language', newLang);
+    
+    // Обновляем текст кнопки
+    if (langButton) {
+        langButton.textContent = newLang.toUpperCase();
+    }
+    
+    // Обновляем все тексты на странице
     updateTexts();
+}
+
+// Функция для загрузки сохраненного языка
+function loadSavedLanguage() {
+    const savedLang = localStorage.getItem('language') || 'en';
+    const langButton = document.querySelector('#languageToggle span');
+    
+    if (langButton) {
+        langButton.textContent = savedLang.toUpperCase();
+    }
+    
+    // Обновляем все тексты на странице
+    updateTexts();
+}
+
+// Обновляем функцию updateTexts для поддержки обоих языков
+function updateTexts() {
+    const currentLang = localStorage.getItem('language') || 'en';
+    const translations = {
+        en: {
+            title: 'Image Search',
+            updateIndex: 'Update Index',
+            syncWithICloud: 'Sync with iCloud',
+            search: 'Search',
+            searchPlaceholder: 'Enter your search query in English...',
+            totalFiles: 'Total Files',
+            totalImages: 'Total Images',
+            totalVideos: 'Total Videos',
+            lastUpdate: 'Last Update',
+            syncStatus: 'Sync Status',
+            stopIndexing: 'Stop Indexing',
+            stopSync: 'Stop Sync'
+        },
+        ru: {
+            title: 'Поиск изображений',
+            updateIndex: 'Обновить индекс',
+            syncWithICloud: 'Синхронизация с iCloud',
+            search: 'Поиск',
+            searchPlaceholder: 'Введите поисковый запрос на английском...',
+            totalFiles: 'Всего файлов',
+            totalImages: 'Всего изображений',
+            totalVideos: 'Всего видео',
+            lastUpdate: 'Последнее обновление',
+            syncStatus: 'Статус синхронизации',
+            stopIndexing: 'Остановить индексацию',
+            stopSync: 'Остановить синхронизацию'
+        }
+    };
+
+    // Обновляем все элементы с атрибутом data-translate
+    document.querySelectorAll('[data-translate]').forEach(element => {
+        const key = element.getAttribute('data-translate');
+        if (translations[currentLang][key]) {
+            if (element.tagName === 'INPUT') {
+                element.placeholder = translations[currentLang][key];
+            } else {
+                element.textContent = translations[currentLang][key];
+            }
+        }
+    });
 }
 
 // Функция для проверки текущего статуса операций
@@ -840,38 +914,6 @@ async function checkOperationsStatus() {
         console.error('Ошибка при проверке статуса операций:', error);
     }
 }
-
-// Обновляем инициализацию при загрузке страницы
-document.addEventListener('DOMContentLoaded', () => {
-    // Инициализация темы
-    const savedTheme = userSettings.getTheme();
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    
-    const themeIcon = document.querySelector('#themeToggle i');
-    themeIcon.className = savedTheme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
-    
-    // Добавляем обработчики для кнопок
-    document.getElementById('themeToggle').addEventListener('click', toggleTheme);
-    document.getElementById('languageToggle').addEventListener('click', toggleLanguage);
-    
-    // Устанавливаем язык
-    const savedLang = userSettings.getLanguage();
-    document.documentElement.setAttribute('lang', savedLang);
-    updateTexts();
-    
-    // Проверяем индекс и загружаем статистику
-    checkIndex();
-    updateStatistics();
-    
-    // Проверяем статус текущих операций
-    checkOperationsStatus();
-    
-    // Обновляем статистику каждые 30 секунд
-    setInterval(updateStatistics, 30000);
-
-    // Загружаем сохраненные учетные данные
-    loadSavedCredentials();
-});
 
 // Добавляем функцию для обновления статистики
 async function updateStatistics() {
